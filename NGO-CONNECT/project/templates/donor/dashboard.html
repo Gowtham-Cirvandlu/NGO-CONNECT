@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Donor Dashboard - NGO Connect{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <div class="card p-6 mb-8 border border-slate-200 shadow-md">
+      <h1 class="text-3xl font-semibold">Welcome, {{ donor.user.first_name if donor and donor.user else 'Donor' }}</h1>
+      <p class="mt-1 muted">Your giving impact at a glance.</p>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-md p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-wider text-slate-500">Total Donated</div>
+            <div class="mt-1 text-3xl font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-500 text-transparent bg-clip-text">₹{{ '%.0f'|format(total_donated or 0) }}</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-white shadow">
+            <i class="fa-solid fa-indian-rupee-sign"></i>
+          </div>
+        </div>
+      </div>
+      <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-md p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-wider text-slate-500">Organizations Supported</div>
+            <div class="mt-1 text-3xl font-semibold bg-gradient-to-r from-sky-500 to-cyan-400 text-transparent bg-clip-text">{{ organizations_supported or 0 }}</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center text-white shadow">
+            <i class="fa-solid fa-building-ngo"></i>
+          </div>
+        </div>
+      </div>
+      <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-md p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-wider text-slate-500">Donations Made</div>
+            <div class="mt-1 text-3xl font-semibold bg-gradient-to-r from-emerald-600 to-green-400 text-transparent bg-clip-text">{{ total_donations or 0 }}</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-green-400 flex items-center justify-center text-white shadow">
+            <i class="fa-solid fa-hand-holding-heart"></i>
+          </div>
+        </div>
+      </div>
+      <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-md p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-wider text-slate-500">Lives Impacted</div>
+            <div class="mt-1 text-3xl font-semibold bg-gradient-to-r from-pink-600 to-rose-500 text-transparent bg-clip-text">{{ (lives_impacted or 0) }}+</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-600 to-rose-500 flex items-center justify-center text-white shadow">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="card p-6 border border-slate-200 shadow-sm">
+        <h3 class="text-xl font-semibold mb-4"><i class="fa-solid fa-magnifying-glass"></i> Discover NGOs</h3>
+        <form action="{{ url_for('ngos_directory') }}" method="get" class="grid gap-4">
+          <div>
+            <label class="block mb-1 muted">Category</label>
+            <input class="w-full h-12 border rounded-lg px-3" type="text" name="category" placeholder="Type a category" />
+          </div>
+          <div>
+            <label class="block mb-1 muted">Location</label>
+            <input class="w-full h-12 border rounded-lg px-3" type="text" name="city" placeholder="Enter city or state" />
+          </div>
+          <div>
+            <label class="block mb-1 muted">Donation Amount</label>
+            <select class="w-full h-12 border rounded-lg px-3" name="amount_range">
+              <option>Any Amount</option>
+              <option>₹500 - ₹5,000</option>
+              <option>₹5,000 - ₹25,000</option>
+              <option>₹25,000+</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-primary btn-rounded"><i class="fa-solid fa-magnifying-glass"></i> Search NGOs</button>
+          </div>
+        </form>
+      </div>
+      <div class="card p-6 border border-slate-200 shadow-sm">
+        <h3 class="text-xl font-semibold mb-2"><i class="fa-solid fa-chart-pie"></i> Donation Impact</h3>
+        <p class="mb-4 muted">Your donations have helped:</p>
+        <ul class="space-y-3">
+          <li class="flex items-center justify-between border-b border-slate-200 pb-2"><span><i class="fa-solid fa-graduation-cap"></i> Provide education to 50+ children</span></li>
+          <li class="flex items-center justify-between border-b border-slate-200 pb-2"><span><i class="fa-solid fa-heart"></i> Support healthcare for 200+ families</span></li>
+          <li class="flex items-center justify-between border-b border-slate-200 pb-2"><span><i class="fa-solid fa-leaf"></i> Plant 500+ trees in communities</span></li>
+          <li class="flex items-center justify-between"><span><i class="fa-solid fa-house-chimney"></i> Build 3 homes for families in need</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card p-0 overflow-hidden mb-8 border border-slate-200 shadow-sm">
+      <div class="p-6 border-b border-slate-200"><h3 class="text-xl font-semibold"><i class="fa-solid fa-rotate-left"></i> Donation History</h3></div>
+      <div class="p-0 overflow-x-auto">
+        <table class="w-full text-left align-middle">
+          <thead class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
+            <tr>
+              <th class="px-6 py-3">Organization</th>
+              <th class="px-6 py-3">Amount</th>
+              <th class="px-6 py-3">Date</th>
+              <th class="px-6 py-3">Category</th>
+              <th class="px-6 py-3">Status</th>
+              <th class="px-6 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            {% for d in donations %}
+            {% set status = d.status or '' %}
+            {% set status_class = 'bg-yellow-100 text-yellow-700' if status in ['pending','pending_verification'] else ('bg-green-100 text-green-700' if status=='confirmed' else 'bg-red-100 text-red-700') %}
+            <tr class="border-b border-slate-100 hover:bg-slate-50/60">
+              <td class="px-6 py-4 font-medium text-slate-800">{{ d.ngo.organization_name if d.ngo else d.ngo_id }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">₹{{ '%.2f'|format(d.amount_inr or 0) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ (d.created_at.strftime('%b %d, %Y') if d.created_at else '') }}</td>
+              <td class="px-6 py-4">
+                {% if d.ngo and d.ngo.category %}
+                  <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">{{ d.ngo.category }}</span>
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 rounded-full text-xs {{ status_class }}">{{ status|replace('_',' ')|title }}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {% if d.status == 'confirmed' %}
+                  <a class="btn btn-secondary btn-rounded" href="{{ url_for('donor_certificate_view', donation_id=d.id) }}">Certificate</a>
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="px-6 py-6 muted">No donations</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="card p-6 border border-slate-200 shadow-sm">
+        <h3 class="text-xl font-semibold mb-4"><i class="fa-regular fa-star"></i> Recommended NGOs</h3>
+        <div class="space-y-6">
+          {% for n in (recommended_ngos or all_ngos or [])[:3] %}
+          <div class="border-b border-slate-200 pb-4">
+            <div class="text-lg">{{ n.organization_name }}</div>
+            <div class="text-sm muted">{{ n.category or '—' }} • {{ '4.9★ rating' }}</div>
+            <div class="text-sm mt-1 muted">{{ (n.description or '')[:120] }}{% if (n.description or '')|length > 120 %}...{% endif %}</div>
+            <a class="btn btn-primary btn-rounded mt-3" href="{{ url_for('donation_checkout') }}?ngo={{ n.id }}"><i class="fa-solid fa-heart"></i> Donate Now</a>
+          </div>
+          {% else %}
+          <div class="text-sm muted">No recommendations available.</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card p-6 border border-slate-200 shadow-sm">
+        <h3 class="text-xl font-semibold mb-4"><i class="fa-regular fa-gift"></i> Quick Donation</h3>
+        <form action="{{ url_for('donation_checkout') }}" method="get" class="space-y-4">
+          <div>
+            <label for="qd_amount" class="block mb-1 muted">Amount (₹)</label>
+            <input id="qd_amount" name="amount" type="number" min="1" step="1" required />
+          </div>
+          <div>
+            <label for="qd_ngo" class="block mb-1 muted">Select NGO</label>
+            <select id="qd_ngo" name="ngo" required>
+              <option value="">Choose an organization</option>
+              {% for n in all_ngos or [] %}
+              <option value="{{ n.id }}">{{ n.organization_name }}{% if n.city or n.state %} — {{ n.city or '' }}{% if n.city and n.state %}, {% endif %}{{ n.state or '' }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="qd_message" class="block mb-1 muted">Message (Optional)</label>
+            <textarea id="qd_message" name="message" rows="3" placeholder="Leave a message of support..."></textarea>
+          </div>
+          <label style="display:flex; align-items:center; gap:.5rem;" class="muted">
+            <input type="checkbox" name="anonymous" value="true"> Make this donation anonymous
+          </label>
+          <button type="submit" class="btn btn-primary btn-rounded" style="width:100%;"><i class="fa-solid fa-credit-card"></i> Make Donation</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card p-6 border border-slate-200 shadow-sm">
+      <h3 class="text-xl font-semibold mb-6"><i class="fa-solid fa-certificate"></i> Your Certificates</h3>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="text-center rounded-xl p-6 card border border-slate-100 shadow-sm">
+          <div class="text-3xl mb-2">🌼</div>
+          <div class="font-semibold">First Donor</div>
+          <div class="text-sm mb-3 muted">Made your first donation</div>
+          <a class="btn btn-secondary btn-rounded" href="{{ url_for('donor_certificates') }}">Download</a>
+        </div>
+        <div class="text-center rounded-xl p-6 card border border-slate-100 shadow-sm">
+          <div class="text-3xl mb-2">🏅</div>
+          <div class="font-semibold">Generous Supporter</div>
+          <div class="text-sm mb-3 muted">Donated over ₹10,000</div>
+          <a class="btn btn-secondary btn-rounded" href="{{ url_for('donor_certificates') }}">Download</a>
+        </div>
+        <div class="text-center rounded-xl p-6 card border border-slate-100 shadow-sm">
+          <div class="text-3xl mb-2">❤️</div>
+          <div class="font-semibold">Community Champion</div>
+          <div class="text-sm mb-3 muted">Supported 5+ organizations</div>
+          <a class="btn btn-secondary btn-rounded" href="{{ url_for('donor_certificates') }}">Download</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

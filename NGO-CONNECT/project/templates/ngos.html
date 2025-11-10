@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}NGOs - NGO Connect{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl lg:text-5xl text-[#1F2B5B] font-bold mb-4">
+        Explore NGOs
+      </h1>
+      <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+        Browse verified organizations and discover opportunities to contribute
+      </p>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="GET" class="mb-10 shadow-lg rounded-2xl bg-white border border-gray-100 js-public-filter" data-target="#ngosSection">
+      <div class="p-6 grid md:grid-cols-4 gap-4">
+        <div class="md:col-span-2 relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input
+            class="pl-10 h-12 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF0090] focus:border-[#FF0090] transition-all duration-200"
+            type="text"
+            id="q"
+            name="q"
+            value="{{ q or '' }}"
+            placeholder="Search NGOs..."
+          />
+        </div>
+        <div>
+          <input
+            class="h-12 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF0090] focus:border-[#FF0090]"
+            type="text"
+            id="category"
+            name="category"
+            value="{{ category or '' }}"
+            placeholder="Category (type to filter)"
+          />
+        </div>
+        <div>
+          <input
+            class="h-12 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF0090] focus:border-[#FF0090]"
+            type="text"
+            id="city"
+            name="city"
+            value="{{ city or '' }}"
+            placeholder="City"
+          />
+        </div>
+      </div>
+      <div class="px-6 pb-6 text-right">
+        <button
+          class="bg-[#FF0090] hover:bg-[#E0007D] text-white rounded-full px-8 py-2 shadow-md transition-all duration-300 hover:scale-105"
+          type="submit"
+        >
+          <i class="fa-solid fa-filter mr-2"></i>Filter
+        </button>
+      </div>
+    </form>
+
+    <div id="ngosSection">
+    <!-- NGO Cards -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for ngo in (ngos.items if ngos and ngos.items is not none else ngos) %}
+        <div
+          class="border-0 shadow-lg hover:shadow-2xl transition-transform duration-300 hover:-translate-y-2 rounded-xl bg-white"
+        >
+          <div class="relative h-48 overflow-hidden rounded-t-xl bg-gray-100">
+            {% if ngo.image_url %}
+              <img
+                src="{{ ngo.image_url }}"
+                alt="{{ ngo.organization_name }}"
+                class="object-cover w-full h-full"
+              />
+            {% else %}
+              <div class="flex items-center justify-center h-full text-gray-400 text-sm bg-gray-50">
+                <i class="fa-solid fa-hand-holding-heart text-3xl"></i>
+              </div>
+            {% endif %}
+          </div>
+          <div class="p-6">
+            <div class="flex items-start justify-between">
+              <h3 class="text-[#1F2B5B] text-xl font-semibold">
+                {{ ngo.organization_name }}
+              </h3>
+              {% if ngo.verified or ngo.is_verified %}
+                <span class="inline-flex items-center gap-1 text-green-600 text-sm font-medium">
+                  <i class="fa-solid fa-circle-check"></i> Verified
+                </span>
+              {% endif %}
+            </div>
+
+            {% if ngo.category %}
+              <span
+                class="inline-block bg-[#FF0090]/10 text-[#FF0090] text-xs font-medium px-3 py-1 rounded-full mt-2"
+              >
+                {{ ngo.category }}
+              </span>
+            {% endif %}
+
+            <div class="text-gray-500 text-sm mt-1">
+              {{ ngo.city or '' }}{% if ngo.city and ngo.state %}, {% endif %}{{ ngo.state or '' }}
+            </div>
+
+            {% if ngo.description %}
+              <p class="text-gray-600 mt-3">
+                {{ (ngo.description or '')[:140] }}{% if (ngo.description or '')|length > 140 %}...{% endif %}
+              </p>
+            {% endif %}
+
+            <div class="flex flex-wrap gap-2 mt-5">
+              <a
+                class="bg-[#FF0090]/10 text-[#FF0090] font-medium rounded-full px-4 py-2 hover:bg-[#FF0090]/20 transition-all duration-200"
+                href="{{ url_for('ngo_opportunities', ngo_id=ngo.id) }}"
+              >
+                <i class="fa-solid fa-briefcase mr-1"></i> View Opportunities
+              </a>
+
+              {% if ngo.website %}
+                <a
+                  class="bg-[#1F2B5B] text-white rounded-full px-4 py-2 hover:bg-[#142048] transition-all duration-200"
+                  href="{{ ngo.website }}"
+                  target="_blank"
+                >
+                  <i class="fa-solid fa-globe mr-1"></i> Visit Website
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="border-0 shadow rounded-xl bg-white p-10 text-center col-span-full">
+          <i class="fa-solid fa-face-frown text-4xl text-gray-400 mb-4"></i>
+          <p class="text-gray-600 text-lg">
+            No NGOs found. Try adjusting your filters or search term.
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if ngos and ngos.pages %}
+    <div class="flex items-center justify-between text-sm text-gray-600 mt-8">
+      <div>Page {{ ngos.page }} of {{ ngos.pages }}</div>
+      <div class="pagination flex gap-2">
+        {% if ngos.has_prev %}
+          <a class="px-3 py-1 border rounded" href="?page={{ ngos.prev_num }}&q={{ q|default('', true) }}&category={{ category|default('', true) }}&city={{ city|default('', true) }}">Prev</a>
+        {% endif %}
+        {% if ngos.has_next %}
+          <a class="px-3 py-1 border rounded" href="?page={{ ngos.next_num }}&q={{ q|default('', true) }}&category={{ category|default('', true) }}&city={{ city|default('', true) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var ajaxBusy = false;
+  function setSkeletonCards(target){
+    try {
+      var grid = target.querySelector('.grid');
+      if(!grid) return;
+      grid.innerHTML = '';
+      for(var i=0;i<6;i++){
+        var div = document.createElement('div');
+        div.className = 'border-0 shadow-lg rounded-xl bg-white p-6';
+        div.innerHTML = '<div class="mb-4 h-40 bg-gray-100 rounded-xl overflow-hidden"><span class="skeleton-box lg" style="height:100%;display:block"></span></div>'+
+                        '<div class="space-y-2">'+
+                        '<span class="skeleton-box lg" style="height:16px"></span>'+
+                        '<span class="skeleton-box" style="height:12px"></span>'+
+                        '<span class="skeleton-box" style="height:12px;width:80%"></span>'+
+                        '</div>';
+        grid.appendChild(div);
+      }
+    } catch(e){}
+  }
+  function swapSection(fromHtml, wrapSelector){
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(fromHtml, 'text/html');
+    var nextWrap = doc.querySelector(wrapSelector);
+    var cur = document.querySelector(wrapSelector);
+    if(nextWrap && cur){ cur.innerHTML = nextWrap.innerHTML; return true; }
+    return false;
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    // Filter submit via AJAX
+    document.querySelectorAll('.js-public-filter').forEach(function(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault(); if(ajaxBusy) return;
+        var targetSel = form.getAttribute('data-target') || '#ngosSection';
+        var target = document.querySelector(targetSel);
+        if(target) setSkeletonCards(target);
+        var params = new URLSearchParams(new FormData(form));
+        var url = window.location.pathname + '?' + params.toString();
+        var btn = form.querySelector('button[type="submit"]');
+        if(btn){ btn.disabled = true; btn.classList.add('opacity-50','pointer-events-none'); }
+        ajaxBusy = true;
+        fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } })
+          .then(function(r){ return r.text(); })
+          .then(function(html){ if(!swapSection(html, targetSel)){ window.location.href = url; return; } history.replaceState(null, '', url); })
+          .catch(function(){})
+          .finally(function(){ ajaxBusy = false; if(btn){ btn.disabled = false; btn.classList.remove('opacity-50','pointer-events-none'); } });
+      });
+    });
+    // Pagination click via AJAX
+    document.body.addEventListener('click', function(ev){
+      var a = ev.target.closest('#ngosSection .pagination a');
+      if(!a) return; ev.preventDefault(); if(ajaxBusy) return;
+      var wrapSel = '#ngosSection';
+      var target = document.querySelector(wrapSel);
+      if(target) setSkeletonCards(target);
+      ajaxBusy = true;
+      var url = a.href;
+      document.querySelectorAll('#ngosSection .pagination a').forEach(function(link){ link.classList.add('opacity-50','pointer-events-none'); });
+      fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } })
+        .then(function(r){ return r.text(); })
+        .then(function(html){ if(!swapSection(html, wrapSel)){ window.location.href = url; return; } history.replaceState(null, '', url); })
+        .catch(function(){})
+        .finally(function(){ ajaxBusy = false; document.querySelectorAll('#ngosSection .pagination a').forEach(function(link){ link.classList.remove('opacity-50','pointer-events-none'); }); });
+    });
+  });
+})();
+</script>
+{% endblock %}

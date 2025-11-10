@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Create' if mode=='create' else 'Edit' }} Event - {{ ngo.organization_name }}{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-light py-4">
+  <div class="container">
+    <div class="row mb-3">
+      <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0"><i class="fas fa-{{ 'plus' if mode=='create' else 'edit' }} text-primary me-2"></i>{{ 'Create' if mode=='create' else 'Edit' }} Event</h1>
+        <a class="btn btn-outline-secondary" href="{{ url_for('ngo_events') }}"><i class="fas fa-arrow-left me-2"></i>Back</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="card card-elevated">
+          <div class="card-body">
+            <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Title</label>
+              <input class="form-control" name="title" value="{{ event.title if event else '' }}" placeholder="e.g., Beach Cleanup Drive" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              <input class="form-control" name="category" value="{{ event.category if event else '' }}" placeholder="e.g., Environment, Education, Health">
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" rows="4" name="description" placeholder="Briefly describe the event objectives and activities">{{ event.description if event else '' }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Location</label>
+              <input class="form-control" name="location" value="{{ event.location if event else '' }}" placeholder="e.g., Juhu Beach, Mumbai">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-control" name="start_date" value="{{ event.start_date.strftime('%Y-%m-%d') if event and event.start_date else '' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-control" name="end_date" value="{{ event.end_date.strftime('%Y-%m-%d') if event and event.end_date else '' }}" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Max Volunteers</label>
+              <input type="number" class="form-control" name="max_volunteers" value="{{ event.max_volunteers if event and event.max_volunteers is not none else '' }}" min="0" placeholder="e.g., 50">
+            </div>
+            <div class="col-md-3 d-flex align-items-center">
+              <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if event and event.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="is_active">Active</label>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <h5 class="mb-2">Time Slots</h5>
+            <div class="table-responsive">
+              <table class="table align-middle" id="slots-table">
+                <thead>
+                  <tr>
+                    <th style="width: 22%">Date</th>
+                    <th style="width: 22%">Start</th>
+                    <th style="width: 22%">End</th>
+                    <th style="width: 22%">Capacity</th>
+                    <th style="width: 12%"></th>
+                  </tr>
+                </thead>
+                <tbody id="slots-body"></tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-outline-primary" id="add-slot">Add Slot</button>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-primary"><i class="fas fa-save me-2"></i>{{ 'Create' if mode=='create' else 'Save Changes' }}</button>
+            <a class="btn btn-outline-secondary" href="{{ url_for('ngo_events') }}">Cancel</a>
+          </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% block extra_js %}
+<script>
+  window.addEventListener('DOMContentLoaded', function(){
+    var body = document.getElementById('slots-body');
+    var addBtn = document.getElementById('add-slot');
+    function addRow(values){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '\
+        <td><input type="date" class="form-control" name="slot_date[]" value="'+(values&&values.d||'')+'"></td>\
+        <td><input type="time" class="form-control" name="slot_start[]" value="'+(values&&values.s||'')+'"></td>\
+        <td><input type="time" class="form-control" name="slot_end[]" value="'+(values&&values.e||'')+'"></td>\
+        <td><input type="number" class="form-control" name="slot_capacity[]" min="1" value="'+(values&&values.c||'')+'"></td>\
+        <td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm remove-slot">Remove</button></td>';
+      if(body){ body.appendChild(tr); }
+    }
+    if(addBtn){
+      addBtn.addEventListener('click', function(){ addRow(); });
+    }
+    document.addEventListener('click', function(e){
+      if(e.target && e.target.classList.contains('remove-slot')){
+        var row = e.target.closest('tr');
+        if(row){ row.remove(); }
+      }
+    });
+    if(body && body.children.length === 0){ addRow(); }
+  });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Certificates - NGO Connect{% endblock %}
+{% block content %}
+<section class="container">
+  <h1 class="section-heading" style="margin-top:0;">Donation Certificates</h1>
+  <div class="grid grid-3">
+    {% for c in certificates %}
+      {% set org = c.ngo.organization_name if c.ngo else '—' %}
+      {% set dt = c.created_at.strftime('%b %d, %Y') if c.created_at else '' %}
+      <div class="card border border-slate-200 shadow-sm" style="display:flex; flex-direction:column; gap:.6rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;">{{ org }}</h3>
+          <span class="px-2 py-1 rounded-full text-xs {{ 'bg-green-100 text-green-700' if c.status=='confirmed' else ('bg-yellow-100 text-yellow-700' if c.status in ['pending','pending_verification'] else 'bg-red-100 text-red-700') }}">{{ (c.status or '')|replace('_',' ')|title }}</span>
+        </div>
+        <div class="muted" style="display:flex; gap:1rem; flex-wrap:wrap;">
+          <span>Donation ID: <strong>{{ c.id }}</strong></span>
+          <span>Amount: <strong>₹{{ '%.2f'|format(c.amount_inr or 0) }}</strong></span>
+          <span>Date: <strong>{{ dt }}</strong></span>
+        </div>
+        <div style="display:flex; gap:.5rem; margin-top:.25rem;">
+          <a class="btn btn-secondary btn-rounded" href="{{ url_for('donor_certificate_view', donation_id=c.id) }}">View</a>
+          <a class="btn btn-primary btn-rounded" href="{{ url_for('donor_certificate_view', donation_id=c.id) }}?download=1"><i class="fa-solid fa-download"></i> Download</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="card border border-slate-200 shadow-sm" style="grid-column:1/-1;">
+        <p class="muted" style="margin:0;">No confirmed certificates yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

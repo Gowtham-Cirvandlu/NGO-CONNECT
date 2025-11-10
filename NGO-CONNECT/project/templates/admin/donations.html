@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Admin Donations - NGO Connect{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <div class="border-0 shadow-lg rounded-xl bg-white p-6 mb-8">
+      <h1 class="text-3xl text-[#1F2B5B]">Donations</h1>
+      <p class="text-gray-600">Filter and manage platform donations.</p>
+    </div>
+
+    <form method="GET" class="border-0 shadow-lg rounded-xl bg-white p-6 mb-6">
+      <div class="grid md:grid-cols-4 gap-4 items-end">
+        <div>
+          <label>Status</label>
+          <select name="status">
+            <option value="" {% if not selected_status %}selected{% endif %}>All</option>
+            {% for s in ['pending','pending_verification','confirmed','failed'] %}
+              <option value="{{ s }}" {% if selected_status==s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>NGO</label>
+          <select name="ngo_id">
+            <option value="">All</option>
+            {% for n in ngos %}
+              <option value="{{ n.id }}" {% if selected_ngo_id==n.id %}selected{% endif %}>{{ n.organization_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="md:col-span-2 flex gap-2">
+          <button class="btn btn-accent btn-rounded" type="submit">Filter</button>
+          <a class="btn btn-secondary btn-rounded" href="?export=csv">Export CSV</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="border-0 shadow-lg rounded-xl bg-white overflow-hidden">
+      <div class="p-0 overflow-x-auto">
+        <table class="table w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">ID</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Donor</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">NGO</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Amount</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Status</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in donations %}
+              <tr>
+                <td class="py-3 px-4">{{ d.id }}</td>
+                <td class="py-3 px-4">{{ d.donor_id or 'Anon' }}</td>
+                <td class="py-3 px-4">{{ d.ngo_id }}</td>
+                <td class="py-3 px-4">₹{{ d.amount_inr or 0 }}</td>
+                <td class="py-3 px-4"><span class="badge {{ 'badge-success' if d.status=='confirmed' else ('badge-warning' if d.status in ['pending','pending_verification'] else 'badge-danger') }}">{{ d.status }}</span></td>
+                <td class="py-3 px-4">
+                  <form method="POST" action="{{ url_for('admin_set_donation_status', donation_id=d.id) }}" class="flex items-center gap-2 js-donation-status-form" data-donation-id="{{ d.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="status">
+                      {% for s in ['pending','pending_verification','confirmed','failed'] %}
+                        <option value="{{ s }}" {% if d.status==s %}selected{% endif %}>{{ s }}</option>
+                      {% endfor %}
+                    </select>
+                    <button class="btn btn-secondary btn-rounded" type="submit">Update</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6" class="muted py-4 px-4">No donations</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  function showToast(level, message){
+    try {
+      var container = document.getElementById('toastContainer');
+      if(!container){ return; }
+      var el = document.createElement('div');
+      el.className = 'toast toast-' + (level || 'info');
+      el.innerHTML = '<i class="fas ' + (level==='success'?'fa-check-circle':(level==='error'?'fa-exclamation-circle':'fa-info-circle')) + ' toast-icon"></i>'+
+                     '<div>' + message + '</div>'+
+                     '<button class="toast-close" aria-label="Close">&times;</button>';
+      el.querySelector('.toast-close').addEventListener('click', function(){ el.remove(); });
+      container.appendChild(el);
+      setTimeout(function(){ el.remove(); }, 4000);
+    } catch(e){}
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.js-donation-status-form').forEach(function(form){
+      form.addEventListener('submit', function(ev){
+        ev.preventDefault();
+        var btn = form.querySelector('button[type="submit"]');
+        if(btn){ btn.disabled = true; }
+        var fd = new FormData(form);
+        fetch(form.action, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+          body: fd
+        }).then(function(r){ return r.json().then(function(j){ return { ok:r.ok, status:r.status, data:j }; }); })
+          .then(function(res){
+            if(res.ok && res.data && res.data.success){
+              var tr = form.closest('tr');
+              var status = res.data.status || '';
+              if(tr){
+                var cell = tr.querySelector('td:nth-child(5) span');
+                if(cell){
+                  cell.textContent = (status==='pending'?'pending':(status==='pending_verification'?'pending_verification':(status==='confirmed'?'confirmed':'failed')));
+                  cell.classList.remove('badge-success','badge-warning','badge-danger');
+                  if(status==='confirmed') cell.classList.add('badge-success');
+                  else if(status==='pending' || status==='pending_verification') cell.classList.add('badge-warning');
+                  else cell.classList.add('badge-danger');
+                }
+              }
+              showToast('success','Donation status updated');
+            } else {
+              showToast('error', (res.data && res.data.error) ? res.data.error : 'Failed to update');
+            }
+          }).catch(function(){ showToast('error','Network error'); })
+          .finally(function(){ if(btn){ btn.disabled = false; } });
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

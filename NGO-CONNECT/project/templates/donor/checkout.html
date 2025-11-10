@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Donate - NGO Connect{% endblock %}
+
+{% block content %}
+
+<style>
+  body {
+    background: #faf5ff;
+    font-family: "Inter", sans-serif;
+  }
+
+  .donate-wrapper {
+    max-width: 1250px;
+    margin: auto;
+    display: flex;
+    gap: 25px;
+    padding: 40px 10px;
+  }
+
+  .donate-card, .side-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  }
+
+  .donate-card {
+    flex: 2;
+  }
+
+  .side-card {
+    flex: 1;
+  }
+
+  .title {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    margin-top: 6px;
+  }
+
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 22px;
+  }
+
+  .toggle {
+    flex: 1;
+    background: #eee;
+    border: none;
+    padding: 10px;
+    border-radius: 30px;
+    cursor: pointer;
+  }
+
+  .toggle.active {
+    background: #ff0bb8;
+    color: white;
+  }
+
+  .amount-grid {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .amount {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 14px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .amount.active {
+    background: #ff009e;
+    color: #fff;
+  }
+
+  .custom-input {
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+  }
+
+  .form-label {
+    display: block;
+    margin-top: 18px;
+    font-weight: 600;
+  }
+
+  .select,
+  .input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 6px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tab {
+    flex: 1;
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 30px;
+    cursor: pointer;
+    background: #fff;
+  }
+
+  .tab.active {
+    background: #ff0bb8;
+    color: #fff;
+  }
+
+  .donate-btn {
+    width: 100%;
+    margin-top: 20px;
+    background: #ff009e;
+    border: none;
+    color: white;
+    padding: 14px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .secure-text {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: gray;
+  }
+
+  .side-title {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .side-subtitle {
+    font-size: 14px;
+    color: gray;
+  }
+
+  .qr {
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    margin-top: 18px;
+  }
+
+  .upi-btn {
+    width: 100%;
+    background: #ff009e;
+    border: none;
+    color: white;
+    padding: 10px;
+    margin-top: 18px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .donate-wrapper {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div 
+  class="donate-wrapper"
+  id="donateMeta"
+  data-api="{{ url_for('api_donations_confirm') }}"
+  data-csrf="{{ csrf_token() }}"
+  data-ngo-id="{{ ngo.id if ngo else '' }}"
+  data-back="{{ url_for('donor_dashboard') }}"
+  data-upi-id="{{ upi_id }}"
+  data-upi-name="{{ upi_name }}"
+  data-amount="{{ amount or '' }}"
+  data-message="{{ message or '' }}"
+>
+
+  <!-- LEFT -->
+  <div class="donate-card">
+
+    <h2 class="title">Make Your Donation</h2>
+    <p class="subtitle">Choose how you'd like to contribute</p>
+
+    <!-- Toggle -->
+    <div class="toggle-group">
+      <button class="toggle active">One-Time</button>
+      <button class="toggle">Monthly</button>
+    </div>
+
+    <!-- Amount Tiles -->
+    <div class="amount-grid">
+      <button class="amount active">₹250</button>
+      <button class="amount">₹500</button>
+      <button class="amount">₹1000</button>
+      <button class="amount">₹1500</button>
+      <button class="amount">₹2000</button>
+      <button class="amount">₹5000</button>
+    </div>
+
+    <!-- Custom -->
+    <input class="custom-input" id="amount_inr" placeholder="₹ Custom amount"/>
+
+    <!-- NGO -->
+    <label class="form-label">Choose NGO (optional)</label>
+    <select class="select">
+      <option>General Fund - Where it's needed most</option>
+      <option>Clean Water Initiative</option>
+      <option>Education For All</option>
+      <option>Green Earth Foundation</option>
+    </select>
+
+    <!-- Payment -->
+    <label class="form-label">Payment Method</label>
+    <div class="tabs">
+      <button class="tab active">UPI</button>
+      <button class="tab">Card</button>
+      <button class="tab">Bank</button>
+    </div>
+
+    <!-- Info -->
+    <label class="form-label">Your Information</label>
+    <input placeholder="Full Name" class="input"/>
+    <input placeholder="Email address" class="input"/>
+    <input placeholder="Phone (optional)" class="input"/>
+
+    <!-- Message (optional) -->
+    <label class="form-label">Message (optional)</label>
+    <input placeholder="Say something to the NGO" id="message" class="input" value="{{ message or '' }}"/>
+
+    <!-- Anonymous -->
+    <label class="form-label" style="display:flex; align-items:center; gap:.5rem;">
+      <input type="checkbox" id="anonymous" {% if anonymous %}checked{% endif %}/> Donate anonymously
+    </label>
+
+    <!-- Reference -->
+    <label class="form-label">UPI Reference ID</label>
+    <input placeholder="Example: AB12CD34EF56" id="upi_reference" class="input"/>
+
+    <!-- Confirm -->
+    <button class="donate-btn" id="donateConfirm">Donate Now</button>
+
+    <div class="secure-text">
+      🔒 Secure payment powered by UPI
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="side-card">
+      <h2 class="side-title">Scan & Pay</h2>
+      <p class="side-subtitle">Scan this QR using any UPI app</p>
+
+      <p class="side-subtitle" style="margin-top:8px;">
+        Payee: <strong>{{ upi_name }}</strong><br/>
+        UPI ID: <strong>{{ upi_id }}</strong>
+      </p>
+
+      <img id="upiQrImg" alt="UPI QR Code" class="qr"/>
+
+      <small class="side-subtitle" style="display:block; margin-top:8px;">
+        If the QR does not load, refresh the page. You can also send directly to the UPI ID above and paste the reference.
+      </small>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/donor_checkout.js') }}" defer></script>
+{% endblock %}

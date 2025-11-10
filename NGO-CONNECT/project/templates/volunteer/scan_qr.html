@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Scan Attendance QR - Volunteer{% endblock %}
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50 py-24 px-4">
+  <div class="w-full max-w-2xl">
+    <div class="bg-white shadow-2xl rounded-2xl border border-gray-100 p-6 card-elevated">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-semibold text-[#1F2B5B] flex items-center gap-2">
+          <i class="fa-solid fa-camera"></i> Scan Attendance QR
+        </h1>
+        <a href="{{ url_for('volunteer_dashboard') }}" class="btn btn-outline-secondary">Back</a>
+      </div>
+      <p class="text-gray-500 mb-4">Point your camera at the QR shown by the NGO organizer to check-in.</p>
+      <div id="qr-reader" style="width: 100%; max-width: 640px; margin: 0 auto;"></div>
+      <div id="qr-status" class="text-center text-sm text-gray-500 mt-4"></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const statusEl = document.getElementById('qr-status');
+  function setStatus(txt){ if(statusEl){ statusEl.textContent = txt; } }
+
+  function loadScript(src){
+    return new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = ()=> resolve();
+      s.onerror = ()=> reject(new Error('Failed loading '+src));
+      document.head.appendChild(s);
+    });
+  }
+
+  function ensureHtml5Qrcode(){
+    if(window.Html5Qrcode){ return Promise.resolve(); }
+    // Try multiple sources (local vendor if present, then popular CDNs)
+    const sources = [
+      "{{ url_for('static', filename='js/vendor/html5-qrcode.min.js') }}",
+      'https://cdn.jsdelivr.net/npm/html5-qrcode@latest/dist/html5-qrcode.min.js',
+      'https://unpkg.com/html5-qrcode@latest/dist/html5-qrcode.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js'
+    ];
+    let lastErr = null;
+    const tryNext = (i)=>{
+      if(window.Html5Qrcode) return Promise.resolve();
+      if(i >= sources.length){ return Promise.reject(lastErr || new Error('All sources failed')); }
+      return loadScript(sources[i]).then(()=>{
+        if(window.Html5Qrcode) return;
+        lastErr = new Error('Html5Qrcode still undefined after loading');
+        return tryNext(i+1);
+      }).catch(err=>{ lastErr = err; return tryNext(i+1); });
+    };
+    return tryNext(0);
+  }
+
+  function isAttendUrl(text){
+    try {
+      const url = new URL(text, window.location.origin);
+      return /\/attend($|\?)/.test(url.pathname);
+    } catch(e){
+      return false;
+    }
+  }
+
+  function onScanSuccess(decodedText){
+    if(isAttendUrl(decodedText)){
+      window.location.href = decodedText;
+    } else {
+      setStatus('QR recognized but not an attendance link.');
+    }
+  }
+  function onScanFailure(error){ /* ignore frequent failures */ }
+
+  function startScannerHtml5(){
+    try {
+      const qr = new Html5Qrcode('qr-reader');
+      const config = { fps: 10, qrbox: 250, aspectRatio: 1.0, rememberLastUsedCamera: true };
+      Html5Qrcode.getCameras().then(devices => {
+        if(!devices || devices.length === 0){ setStatus('No camera found.'); return; }
+        const camId = devices[0].id;
+        // Pass only a single parameter as required by html5-qrcode: cameraId string
+        qr.start(camId, config, onScanSuccess, onScanFailure)
+          .then(()=> setStatus('Scanning...'))
+          .catch(err => setStatus('Camera error: ' + (err && err.message || err)));
+      }).catch(err => setStatus('Camera access failed: ' + (err && err.message || err)));
+      window.addEventListener('beforeunload', ()=>{ try { qr.stop(); } catch(_){} });
+    } catch(e){ setStatus('Failed to initialize scanner: ' + (e && e.message || e)); }
+  }
+
+  async function startScannerBarcodeDetector(){
+    if(!('BarcodeDetector' in window)) return false;
+    try {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      const video = document.createElement('video');
+      video.setAttribute('playsinline', 'true');
+      video.style.width = '100%';
+      const container = document.getElementById('qr-reader');
+      container.innerHTML = '';
+      container.appendChild(video);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+      setStatus('Scanning...');
+      let stopped = false;
+      async function scan(){
+        if(stopped) return;
+        try {
+          const codes = await detector.detect(video);
+          if(codes && codes.length){
+            const txt = codes[0].rawValue || codes[0].rawValue || '';
+            if(isAttendUrl(txt)){
+              stopped = true;
+              try { stream.getTracks().forEach(t=>t.stop()); } catch(_){ }
+              window.location.href = txt;
+              return;
+            }
+          }
+        } catch(_){ /* ignore */ }
+        requestAnimationFrame(scan);
+      }
+      requestAnimationFrame(scan);
+      window.addEventListener('beforeunload', ()=>{ try { stream.getTracks().forEach(t=>t.stop()); } catch(_){} });
+      return true;
+    } catch(e){ setStatus('Camera/permission error: ' + (e && e.message || e)); return false; }
+  }
+
+  setStatus('Initializing camera...');
+  startScannerBarcodeDetector().then(success=>{
+    if(success) return;
+    // Fallback to html5-qrcode if BarcodeDetector not available
+    setStatus('Loading scanner library...');
+    ensureHtml5Qrcode().then(startScannerHtml5).catch(err=>{
+      setStatus('Failed to load scanner library: ' + (err && err.message || err));
+    });
+  });
+})();
+</script>
+{% endblock %}

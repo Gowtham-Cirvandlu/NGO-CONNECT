@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Register - NGO Connect{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <div class="max-w-3xl mx-auto border-0 shadow-lg rounded-2xl bg-white">
+      <div class="p-8">
+        <h3 class="text-2xl text-[#1F2B5B] mb-6">Create your account</h3>
+        <form method="POST" class="space-y-6" id="registerForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label for="first_name" class="block text-sm text-gray-600 mb-1">First name</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="text" id="first_name" name="first_name" required />
+            </div>
+            <div>
+              <label for="last_name" class="block text-sm text-gray-600 mb-1">Last name</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="text" id="last_name" name="last_name" required />
+            </div>
+            <div>
+              <label for="email" class="block text-sm text-gray-600 mb-1">Email</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="email" id="email" name="email" required />
+            </div>
+            <div>
+              <label for="phone" class="block text-sm text-gray-600 mb-1">Phone</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="tel" id="phone" name="phone" />
+            </div>
+            <div>
+              <label for="password" class="block text-sm text-gray-600 mb-1">Password</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="password" id="password" name="password" required />
+            </div>
+            <div>
+              <label for="role" class="block text-sm text-gray-600 mb-1">Role</label>
+              <select class="w-full h-12 border-2 rounded-lg px-3" id="role" name="role" required onchange="toggleRoleFields()">
+                <option value="">Select Role</option>
+                <option value="ngo">NGO</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="donor">Donor</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- NGO Section -->
+          <div id="ngoFields" class="border rounded-xl p-6 mt-4" style="display: none;">
+            <h3 class="text-lg text-[#1F2B5B] mb-4">Organization Information</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label for="organization_name" class="block text-sm text-gray-600 mb-1">Organization Name</label>
+                <input class="w-full h-12 border-2 rounded-lg px-3" type="text" id="organization_name" name="organization_name" />
+              </div>
+              <div>
+                <label for="description" class="block text-sm text-gray-600 mb-1">Organization Description</label>
+                <textarea class="w-full border-2 rounded-lg px-3 py-2" id="description" name="description" rows="3"></textarea>
+              </div>
+              <div>
+                <label for="mission" class="block text-sm text-gray-600 mb-1">Mission Statement</label>
+                <textarea class="w-full border-2 rounded-lg px-3 py-2" id="mission" name="mission" rows="3"></textarea>
+              </div>
+              <div>
+                <label for="website" class="block text-sm text-gray-600 mb-1">Website</label>
+                <input class="w-full h-12 border-2 rounded-lg px-3" type="url" id="website" name="website" />
+              </div>
+              <div>
+                <label for="category" class="block text-sm text-gray-600 mb-1">Category</label>
+                <input class="w-full h-12 border-2 rounded-lg px-3" type="text" id="category" name="category" placeholder="Type a category" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Volunteer Section -->
+          <div id="volunteerFields" class="border rounded-xl p-6 mt-4" style="display: none;">
+            <h3 class="text-lg text-[#1F2B5B] mb-4">Volunteer Information</h3>
+            <div>
+              <label for="bio" class="block text-sm text-gray-600 mb-1">Bio</label>
+              <textarea class="w-full border-2 rounded-lg px-3 py-2" id="bio" name="bio" rows="3"></textarea>
+            </div>
+
+            <div id="volunteerSkills" class="mt-4">
+              <h4 class="text-md text-[#1F2B5B] mb-2">Skills (select all that apply)</h4>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="teaching"> Teaching</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="medical"> Medical</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="technology"> Technology</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="construction"> Construction</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="cooking"> Cooking</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="driving"> Driving</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="fundraising"> Fundraising</label>
+                <label class="flex items-center gap-2"><input type="checkbox" name="skills" value="event-planning"> Event Planning</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Donor Section -->
+          <div id="donorFields" class="border rounded-xl p-6 mt-4" style="display: none;">
+            <h3 class="text-lg text-[#1F2B5B] mb-4">Donor Information</h3>
+            <div>
+              <label for="company_name" class="block text-sm text-gray-600 mb-1">Company Name (Optional)</label>
+              <input class="w-full h-12 border-2 rounded-lg px-3" type="text" id="company_name" name="company_name" />
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-4">
+            <button class="bg-[#FF0090] hover:bg-[#E0007D] text-white rounded-full px-6 py-2" type="submit">Create account</button>
+            <a class="btn btn-secondary btn-rounded" href="{{ url_for('login') }}">Back to login</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleRoleFields() {
+  const role = document.getElementById('role').value;
+
+  document.getElementById('ngoFields').style.display = 'none';
+  document.getElementById('volunteerFields').style.display = 'none';
+  document.getElementById('donorFields').style.display = 'none';
+
+  if (role === 'ngo') {
+    document.getElementById('ngoFields').style.display = 'block';
+  } else if (role === 'volunteer') {
+    document.getElementById('volunteerFields').style.display = 'block';
+  } else if (role === 'donor') {
+    document.getElementById('donorFields').style.display = 'block';
+  }
+}
+</script>
+{% endblock %}

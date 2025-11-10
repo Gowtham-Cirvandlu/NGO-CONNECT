@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}NGO Dashboard - NGO Connect{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <div class="border-0 shadow-lg rounded-2xl bg-white p-6 mb-8">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-semibold text-[#1F2B5B]">{{ ngo.organization_name }}</h1>
+          <p class="mt-1 text-gray-600">Manage your organization and volunteer opportunities</p>
+        </div>
+        <a href="/ngo/events" class="btn btn-primary btn-rounded"><i class="fa-solid fa-calendar-days"></i> Manage Events</a>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+      <div class="border-0 shadow rounded-xl bg-white p-6 text-center">
+        <div class="text-2xl text-[#A855F7]">{{ (active_events if active_events is defined else total_events) or 0 }}</div>
+        <div class="mt-1 text-sm text-gray-600">Active Events</div>
+      </div>
+      <div class="border-0 shadow rounded-xl bg-white p-6 text-center">
+        <div class="text-2xl text-[#A855F7]">{{ total_volunteers or 0 }}</div>
+        <div class="mt-1 text-sm text-gray-600">Total Volunteers</div>
+      </div>
+      <div class="border-0 shadow rounded-xl bg-white p-6 text-center">
+        <div class="text-2xl text-[#A855F7]">{{ total_hours or 0 }}</div>
+        <div class="mt-1 text-sm text-gray-600">Hours Contributed</div>
+      </div>
+      <div class="border-0 shadow rounded-xl bg-white p-6 text-center">
+        <div class="text-2xl text-[#A855F7]">{{ completed_projects or 0 }}</div>
+        <div class="mt-1 text-sm text-gray-600">Completed Projects</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="border-0 shadow-lg rounded-2xl bg-white p-6">
+        <h3 class="text-xl font-semibold mb-2 text-[#1F2B5B]"><i class="fa-regular fa-calendar-plus"></i> Create New Event</h3>
+        <p class="mb-4 text-gray-600">Create a new volunteer opportunity with detailed information and time slots.</p>
+        <a href="/ngo/events" class="btn btn-primary btn-rounded"><i class="fa-solid fa-plus"></i> Create New Event</a>
+      </div>
+      <div class="border-0 shadow-lg rounded-2xl bg-white p-6">
+        <h3 class="text-xl font-semibold mb-3 text-[#1F2B5B]"><i class="fa-solid fa-chart-line"></i> Quick Stats</h3>
+        <div class="space-y-3 text-[#1F2B5B]">
+          <div class="flex items-center justify-between border-b border-gray-200 pb-2"><span><i class="fa-solid fa-user-group"></i> New volunteers:</span><span class="text-gray-600">{{ new_volunteers or 0 }}</span></div>
+          <div class="flex items-center justify-between border-b border-gray-200 pb-2"><span><i class="fa-regular fa-clock"></i> Hours logged:</span><span class="text-gray-600">{{ hours_logged or 0 }}</span></div>
+          <div class="flex items-center justify-between border-b border-gray-200 pb-2"><span><i class="fa-regular fa-calendar-check"></i> Events completed:</span><span class="text-gray-600">{{ events_completed or 0 }}</span></div>
+          <div class="flex items-center justify-between"><span><i class="fa-regular fa-star"></i> Average rating:</span><span class="text-gray-600">{{ average_rating or '4.8/5' }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-0 shadow-lg rounded-2xl bg-white p-0 overflow-hidden mb-8">
+      <div class="p-6 border-b"><h3 class="text-xl font-semibold text-[#1F2B5B]"><i class="fa-regular fa-calendar-days"></i> Your Events</h3></div>
+      <div class="p-0">
+        <table class="table">
+          <thead><tr><th>Event</th><th>Date & Time</th><th>Location</th><th>Volunteers</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for e in events %}
+            <tr>
+              <td>{{ e.title }}</td>
+              <td>{{ (e.start_date.strftime('%B %d, %Y at %I:%M %p') if e.start_date else '') }}</td>
+              <td>{{ e.city or e.location or '-' }}</td>
+              <td>{{ (e.current_volunteers if e.current_volunteers is defined else 0) }} / {{ (e.max_volunteers if e.max_volunteers is defined else '-') }}</td>
+              <td><span class="badge {{ 'badge-success' if e.is_active else 'badge-warning' }}">{{ 'Active' if e.is_active else 'Draft' }}</span></td>
+              <td class="flex gap-2">
+                <a class="btn btn-secondary btn-rounded" href="/ngo/events">Edit</a>
+                <a class="btn btn-accent btn-rounded" href="{{ url_for('volunteer_event_detail', event_id=e.id) }}">View</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="muted">No events</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="border-0 shadow-lg rounded-2xl bg-white p-6 max-h-[320px] overflow-auto">
+        <h3 class="text-xl font-semibold mb-3 text-[#1F2B5B]"><i class="fa-solid fa-users"></i> Recent Volunteers</h3>
+        <div class="space-y-4 text-[#1F2B5B]">
+          {% for b in recent_volunteers or [] %}
+            <div class="border-b border-gray-200 pb-3">
+              <div class="font-semibold">{{ b.name or 'Volunteer' }}</div>
+              <div class="text-sm text-gray-600">Booked: {{ b.event_title or '-' }}</div>
+              <div class="text-xs mt-1 text-gray-500">{{ b.when or '' }}</div>
+            </div>
+          {% else %}
+            <div class="text-sm text-gray-600">No recent volunteers.</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="border-0 shadow-lg rounded-2xl bg-white p-6 max-h-[320px] overflow-auto">
+        <h3 class="text-xl font-semibold mb-3 text-[#1F2B5B]"><i class="fa-regular fa-comments"></i> Recent Messages</h3>
+        <div class="space-y-4 text-[#1F2B5B]">
+          {% for m in recent_messages or [] %}
+            <div class="border-b border-gray-200 pb-3">
+              <div class="font-semibold">From: {{ m.sender or 'User' }}</div>
+              <div class="text-sm text-gray-600">"{{ m.text or '' }}"</div>
+              <div class="text-xs mt-1 text-gray-500">{{ m.when or '' }}</div>
+            </div>
+          {% else %}
+            <div class="text-sm text-gray-600">No recent messages.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

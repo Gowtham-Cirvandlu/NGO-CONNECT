@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Certificate - NGO Connect{% endblock %}
+{% block content %}
+<section class="container" style="max-width:900px;">
+  <div class="card border border-slate-200 shadow-md" style="padding:2rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div style="display:flex; align-items:center; gap:.5rem;">
+        <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Logo" width="28" height="28"/>
+        <strong>NGO Connect</strong>
+      </div>
+      <a class="btn btn-primary btn-rounded" href="{{ url_for('donor_certificate_view', donation_id=donation.id) }}?download=1"><i class="fa-solid fa-download"></i> Download</a>
+    </div>
+
+    <h2 style="text-align:center; margin:0;">Certificate of Appreciation</h2>
+    <p class="muted" style="text-align:center;">This is to certify that</p>
+    <h3 style="text-align:center; margin:.25rem 0;">{% if donation.anonymous %}Anonymous Donor{% else %}{{ donor.user.first_name }} {{ donor.user.last_name }}{% endif %}</h3>
+    <p class="muted" style="text-align:center;">has donated</p>
+    <h1 style="text-align:center; margin:.25rem 0;">₹{{ '%.2f'|format(donation.amount_inr or 0) }}</h1>
+    <p class="muted" style="text-align:center;">to {{ ngo.organization_name if ngo else 'the organization' }} on {{ donation.created_at.strftime('%b %d, %Y') if donation.created_at else '' }}.</p>
+
+    <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:1rem; margin-top:2rem;">
+      <div class="card border border-slate-100" style="padding:1rem;">
+        <div class="muted text-xs">Donation ID</div>
+        <div><strong>#{{ donation.id }}</strong></div>
+      </div>
+      <div class="card border border-slate-100" style="padding:1rem;">
+        <div class="muted text-xs">Network</div>
+        <div><strong>{{ donation.network|upper }}</strong></div>
+      </div>
+      <div class="card border border-slate-100" style="padding:1rem;">
+        <div class="muted text-xs">Status</div>
+        {% set status = donation.status or '' %}
+        {% set status_class = 'bg-green-100 text-green-700' if status=='confirmed' else ('bg-yellow-100 text-yellow-700' if status in ['pending','pending_verification'] else 'bg-red-100 text-red-700') %}
+        <div><span class="px-2 py-1 rounded-full text-xs {{ status_class }}">{{ status|replace('_',' ')|title }}</span></div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2.5rem;">
+      <div style="text-align:center;">
+        <div style="height:1px; background:#cbd5e1; width:240px; margin:auto;"></div>
+        <div class="muted text-sm">Authorized Signatory</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="height:1px; background:#cbd5e1; width:240px; margin:auto;"></div>
+        <div class="muted text-sm">Donor Signature</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

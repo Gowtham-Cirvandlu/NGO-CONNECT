@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Admin - Users{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pt-24 pb-12">
+  <div class="container mx-auto px-6">
+    <div class="border-0 shadow-lg rounded-xl bg-white p-6 mb-8">
+      <h1 class="text-3xl text-[#1F2B5B]">User Management</h1>
+      <p class="text-gray-600">Browse and manage platform users.</p>
+    </div>
+
+    <div class="border-0 shadow-lg rounded-xl bg-white overflow-hidden" id="usersCard">
+      <div class="p-6 flex items-center justify-between gap-4 border-b">
+        <h3 class="text-xl text-[#1F2B5B]">Users</h3>
+        <form method="GET" class="flex items-center gap-2 js-admin-filter" data-target="#usersTableWrap">
+          <input class="h-10 border-2 rounded-lg px-3" type="text" name="search" value="{{ search or request.args.get('search','') }}" placeholder="Search users" />
+          <select class="h-10 border-2 rounded-lg px-3" name="role">
+            <option value="">All roles</option>
+            {% for r in ['admin','ngo','volunteer','donor'] %}
+              <option value="{{ r }}" {% if (role_filter or request.args.get('role'))==r %}selected{% endif %}>{{ r|capitalize }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-accent btn-rounded" type="submit">Filter</button>
+        </form>
+      </div>
+      <div class="px-6 pt-3 pb-0 js-ajax-area">
+        {% set active_filters = [] %}
+        {% if (search or '') %}{% set _ = active_filters.append(('Search', search)) %}{% endif %}
+        {% if (role_filter or '') %}{% set _ = active_filters.append(('Role', role_filter)) %}{% endif %}
+        {% if (status_filter or '') %}{% set _ = active_filters.append(('Status', status_filter)) %}{% endif %}
+        {% if active_filters %}
+        <div class="flex items-center flex-wrap gap-2 mb-3">
+          {% if search %}
+            <a href="{{ url_for('admin_users', role=role_filter or None, status=status_filter or None) }}" class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm js-filter-chip" data-remove="search">Search: {{ search }} <span class="ml-1 text-gray-500">×</span></a>
+          {% endif %}
+          {% if role_filter %}
+            <a href="{{ url_for('admin_users', search=search or None, status=status_filter or None) }}" class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm js-filter-chip" data-remove="role">Role: {{ role_filter|capitalize }} <span class="ml-1 text-gray-500">×</span></a>
+          {% endif %}
+          {% if status_filter %}
+            <a href="{{ url_for('admin_users', search=search or None, role=role_filter or None) }}" class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm js-filter-chip" data-remove="status">Status: {{ status_filter|capitalize }} <span class="ml-1 text-gray-500">×</span></a>
+          {% endif %}
+          <a href="{{ url_for('admin_users') }}" class="text-sm text-[#1F2B5B] underline js-filter-clear">Clear all</a>
+        </div>
+        {% endif %}
+      </div>
+      <div class="p-0 overflow-x-auto" id="usersTableWrap">
+        <table class="table w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Name</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Email</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Role</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Status</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Joined</th>
+              <th class="text-left text-xs font-semibold text-gray-600 uppercase tracking-wide py-3 px-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in (users.items if users and users.items is not none else []) %}
+            <tr>
+              <td class="py-3 px-4">{{ u.first_name }} {{ u.last_name }}</td>
+              <td class="py-3 px-4">{{ u.email }}</td>
+              <td class="py-3 px-4">{{ u.role }}</td>
+              <td class="py-3 px-4"><span class="js-user-status">{{ 'Active' if u.is_active else 'Inactive' }}</span></td>
+              <td class="py-3 px-4">{{ (u.created_at.strftime('%Y-%m-%d') if u.created_at else '') }}</td>
+              <td class="py-3 px-4">
+                <form method="POST" action="{{ url_for('admin_set_user_active', user_id=u.id) }}" class="inline-flex items-center gap-2 js-user-active">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="active" value="{{ '0' if u.is_active else '1' }}">
+                  <button type="submit" class="btn btn-secondary btn-rounded js-toggle-btn">{{ 'Deactivate' if u.is_active else 'Activate' }}</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="muted py-4 px-4">No users found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if users %}
+      <div class="p-4 flex items-center justify-between text-sm text-gray-600 js-ajax-area">
+        <div>Page {{ users.page }} of {{ users.pages }}</div>
+        <div class="pagination">
+          {% if users.has_prev %}<a href="?page={{ users.prev_num }}&search={{ search }}&role={{ role_filter }}&status={{ status_filter }}">Prev</a>{% endif %}
+          {% if users.has_next %}<a href="?page={{ users.next_num }}&search={{ search }}&role={{ role_filter }}&status={{ status_filter }}">Next</a>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  function setSkeleton(target){
+    var tbl = target.querySelector('tbody');
+    if(!tbl) return;
+    tbl.innerHTML = '';
+    for(var i=0;i<5;i++){
+      var tr = document.createElement('tr'); tr.className='skeleton-row';
+      tr.innerHTML = '<td><span class="skeleton-box lg"></span></td>'+
+                     '<td><span class="skeleton-box"></span></td>'+
+                     '<td><span class="skeleton-box sm"></span></td>'+
+                     '<td><span class="skeleton-box sm"></span></td>'+
+                     '<td><span class="skeleton-box sm"></span></td>';
+      tbl.appendChild(tr);
+    }
+  }
+  function swapTable(fromHtml, wrapSelector){
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(fromHtml, 'text/html');
+    var newWrap = doc.querySelector(wrapSelector);
+    var curWrap = document.querySelector(wrapSelector);
+    if(newWrap && curWrap){ curWrap.innerHTML = newWrap.innerHTML; }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var csrf = (document.querySelector('meta[name="csrf-token"]')||{}).getAttribute ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+    document.querySelectorAll('.js-admin-filter').forEach(function(form){
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var targetSel = form.getAttribute('data-target') || '#usersTableWrap';
+        var target = document.querySelector(targetSel);
+        if(target) setSkeleton(target);
+        var params = new URLSearchParams(new FormData(form));
+        var url = window.location.pathname + '?' + params.toString();
+        fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest', 'X-CSRFToken': csrf } })
+          .then(function(r){ return r.text(); })
+          .then(function(html){ swapTable(html, targetSel); })
+          .catch(function(){ /* ignore */ });
+      });
+    });
+    // Intercept pagination and chip clicks
+    document.body.addEventListener('click', function(ev){
+      var a = ev.target.closest('.pagination a, .js-filter-chip, .js-filter-clear');
+      if(!a) return;
+      var wrapSel = a.closest('#usersCard') ? '#usersTableWrap' : null;
+      if(!wrapSel) return;
+      ev.preventDefault();
+      var target = document.querySelector(wrapSel);
+      if(target) setSkeleton(target);
+      fetch(a.href, { headers: { 'X-Requested-With':'XMLHttpRequest', 'X-CSRFToken': csrf } })
+        .then(function(r){ return r.text(); })
+        .then(function(html){ swapTable(html, wrapSel); })
+        .catch(function(){});
+    });
+    // Inline activate/deactivate
+    document.body.addEventListener('submit', function(ev){
+      var form = ev.target.closest('.js-user-active');
+      if(!form) return;
+      ev.preventDefault();
+      var btn = form.querySelector('.js-toggle-btn');
+      var row = form.closest('tr');
+      var statusEl = row ? row.querySelector('.js-user-status') : null;
+      var activeInput = form.querySelector('input[name="active"]');
+      var makeActive = activeInput && (activeInput.value === '1');
+      // Optimistic UI
+      if(btn){ btn.disabled = true; btn.textContent = makeActive ? 'Activating...' : 'Deactivating...'; }
+      if(statusEl){ statusEl.textContent = makeActive ? 'Active' : 'Inactive'; }
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrf },
+        body: new FormData(form)
+      }).then(function(r){ return r.json().then(function(j){ return { ok:r.ok, data:j }; }); })
+        .then(function(res){
+          if(res.ok && res.data && res.data.success){
+            // Flip button text and hidden value for next toggle
+            if(activeInput){ activeInput.value = makeActive ? '0' : '1'; }
+            if(btn){ btn.textContent = makeActive ? 'Deactivate' : 'Activate'; }
+          } else {
+            // Revert on failure
+            if(statusEl){ statusEl.textContent = makeActive ? 'Inactive' : 'Active'; }
+            if(btn){ btn.textContent = makeActive ? 'Activate' : 'Deactivate'; }
+          }
+        }).catch(function(){
+          if(statusEl){ statusEl.textContent = makeActive ? 'Inactive' : 'Active'; }
+          if(btn){ btn.textContent = makeActive ? 'Activate' : 'Deactivate'; }
+        }).finally(function(){ if(btn){ btn.disabled = false; } });
+    });
+  });
+})();
+</script>
+{% endblock %}

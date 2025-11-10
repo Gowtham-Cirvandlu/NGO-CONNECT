@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Event Details - {{ ngo.organization_name }}{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-light py-4">
+  <div class="container">
+    <div class="row mb-3">
+      <div class="col-12 d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0"><i class="fas fa-eye text-primary me-2"></i>Event Details</h1>
+        <div class="d-flex gap-2">
+          <a class="btn btn-outline-secondary" href="{{ url_for('ngo_events') }}"><i class="fas fa-arrow-left me-2"></i>Back</a>
+          <a class="btn btn-warning" href="{{ url_for('ngo_edit_event', event_id=event.id) }}"><i class="fas fa-edit me-2"></i>Edit</a>
+          <a class="btn btn-success" href="{{ url_for('ngo_attendance_qr', event_id=event.id) }}"><i class="fas fa-qrcode me-2"></i>QR Attendance</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-elevated mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="badge bg-{{ 'success' if event.is_active else 'secondary' }}">{{ 'Active' if event.is_active else 'Inactive' }}</span>
+          <span class="badge bg-info">{{ event.category or 'General' }}</span>
+        </div>
+        <h3 class="h4">{{ event.title }}</h3>
+        <p class="text-muted">{{ event.description or 'No description provided.' }}</p>
+        <div class="row g-3">
+          <div class="col-md-4"><i class="fas fa-map-marker-alt text-primary me-2"></i>{{ event.location or 'Location TBD' }}</div>
+          <div class="col-md-4"><i class="fas fa-calendar text-primary me-2"></i>
+            {% if event.start_date %}
+              {{ event.start_date.strftime('%b %d, %Y') }}{% if event.end_date and event.end_date != event.start_date %} - {{ event.end_date.strftime('%b %d, %Y') }}{% endif %}
+            {% else %}Date TBD{% endif %}
+          </div>
+          <div class="col-md-4"><i class="fas fa-users text-primary me-2"></i>{{ event.current_volunteers or 0 }}/{{ event.max_volunteers or 0 }} volunteers</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-elevated">
+      <div class="card-body">
+        <h5 class="h5 mb-3">Manage</h5>
+        <form method="post" action="{{ url_for('ngo_delete_event', event_id=event.id) }}" onsubmit="return confirm('Delete this event? This cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="btn btn-danger"><i class="fas fa-trash me-2"></i>Delete Event</button>
+        </form>
+      </div>
+    </div>
+  
+    <div class="card card-elevated mt-3">
+      <div class="card-body">
+        <h5 class="h5 mb-3">Bookings</h5>
+        {% if bookings %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Volunteer</th>
+                <th>Time Slot</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in bookings %}
+              {% set ts = (time_slots|selectattr('id','equalto', b.time_slot_id)|list|first) %}
+              {% set slot_over = now_ts and ts and ts.end_time and (ts.end_time.replace(tzinfo=None) <= now_ts) %}
+              {% set base = b.status or 'pending' %}
+              {% set disp = ( 'not_completed' if (base != 'completed' and slot_over) else base ) %}
+              <tr>
+                <td>
+                  {% if b.volunteer and b.volunteer.user %}
+                    {{ b.volunteer.user.first_name }} {{ b.volunteer.user.last_name }}
+                  {% else %}
+                    Volunteer #{{ b.volunteer_id }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if ts %}
+                    {{ ts.start_time.strftime('%b %d, %Y %I:%M %p') }} - {{ ts.end_time.strftime('%I:%M %p') }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  <span class="badge {{
+                    'bg-success' if disp == 'completed' else (
+                    'bg-secondary' if disp == 'not_completed' else (
+                    'bg-warning' if disp == 'pending' else 'bg-info'))
+                  }}">{{ disp }}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-muted">No bookings yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
